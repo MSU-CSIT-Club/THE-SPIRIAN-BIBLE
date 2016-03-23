@@ -16,4 +16,5 @@
     <string name="title_activity_calendar">CalendarActivity</string>
     <string name="title_activity_register">Create an account</string>
     <string name="create_account">Create an acount</string>
+    <string name="facebook_app_id">468112883380506</string>
 </resources>

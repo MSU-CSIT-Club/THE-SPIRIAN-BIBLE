@@ -28,12 +28,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.facebook.AccessToken;
+import com.facebook.FacebookSdk;
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -48,6 +52,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final int REQUEST_READ_CONTACTS = 0;
 
     private TextView loginError;
+
+    private Firebase myFirebaseRef;
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -70,10 +76,24 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
 
         Firebase.setAndroidContext(this);
+        myFirebaseRef = new Firebase("https://spire-app-msu.firebaseio.com/");
         Firebase myFirebaseRef = new Firebase("https://spire-app-msu.firebaseio.com/");
+
+        Firebase.setAndroidContext(getApplicationContext());
+        if (myFirebaseRef.getAuth() != null) {
+            Intent intent = new Intent(getApplicationContext(), CalendarActivity.class);
+            startActivity(intent);
+        }
+        setContentView(R.layout.activity_login);
+
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        if (AccessToken.getCurrentAccessToken() != null) {
+            startActivity(new Intent(this, CalendarActivity.class));
+        }
+
+
 
         loginError = (TextView) findViewById(R.id.login_error);
         loginError.setText("");
@@ -205,11 +225,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             //mAuthTask = new UserLoginTask(email, password);
             //mAuthTask.execute((Void) null);
 
-            Firebase myFirebaseRef = new Firebase("https://spire-app-msu.firebaseio.com/");
+            final Firebase myFirebaseRef = new Firebase("https://spire-app-msu.firebaseio.com/");
             myFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
                 @Override
                 public void onAuthenticated(AuthData authData) {
                     showProgress(false);
+                    Map<String, String> map = new HashMap<String, String>();
+                    map.put("provider", authData.getProvider());
+                    if(authData.getProviderData().containsKey("displayName")) {
+                        map.put("displayName", authData.getProviderData().get("displayName").toString());
+                    }
+                    myFirebaseRef.child("users").child(authData.getUid()).setValue(map);
+
                     Intent intent = new Intent(getApplicationContext(), CalendarActivity.class);
                     startActivity(intent);
                 }
